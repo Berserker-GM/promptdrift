@@ -55,7 +55,7 @@ tests:
 ```
 
 - `provenance.envelope_hashes` stores one SHA-256 per component: `system`, `tools` and `retrieval_context`. The template itself stays in `input_hash`, so it is never hashed twice.
-- Mapping key order does not matter. Declared tool order does, and tool names must be unique.
+- Mapping key order does not matter. Tool names must be unique, and tools are hashed in name order, so reordering tools does not change the hash. Lists inside a tool's `parameters` (such as `required` or `enum`) keep their declared order.
 - Before hashing, scalar values under credential-named keys are removed at any depth (`api_key`, `x-api-key`, `token`, `access_token`, `refresh_token`, `session_token`, `secret`, `client_secret`, `password`, `private_key`, `authorization`, `credential(s)`, `cookie`, `set-cookie`). Matching ignores case, `-` and `_`, and is exact, so `max_tokens` is kept. Object values are kept, so a tool parameter schema named `password` still counts. Long `sk-…` and `Bearer …` strings are masked. Do not store real credentials in configuration regardless.
 - Cases without an envelope omit `envelope_hashes` entirely; their baselines are unchanged and existing v1–v3 baselines load as before. Promoted scenarios (`scenarios.json`) cannot declare an envelope yet.
 
