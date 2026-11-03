@@ -144,12 +144,41 @@ def test_editing_a_risk_description_changes_the_tools_hash():
     assert before["tools"] != after["tools"]
 
 
-def test_declared_tool_order_is_significant():
-    a, b = {"name": "a"}, {"name": "b"}
+TOOLS = [
+    {"name": "lookup_order", "description": "Find an order.", "parameters": {"type": "object"}},
+    {"name": "refund_order", "description": "Refund an order.", "parameters": {"type": "object"}},
+]
+
+
+def test_tool_declaration_order_does_not_change_tools_hash():
+    declared = envelope(tools=TOOLS)
+    reordered = envelope(tools=list(reversed(TOOLS)))
+    assert envelope_hashes(declared) == envelope_hashes(reordered)
+    # Sorting happens only while hashing; the model keeps the declared order.
+    assert [tool.name for tool in reordered.tools] == ["refund_order", "lookup_order"]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"name": "cancel_order"},
+        {"description": "Find an order by id."},
+        {"parameters": {"type": "object", "required": ["order_id"]}},
+    ],
+)
+def test_changing_a_tool_changes_tools_hash(change):
+    changed = [{**TOOLS[0], **change}, TOOLS[1]]
     assert (
-        envelope_hashes(envelope(tools=[a, b]))["tools"]
-        != (envelope_hashes(envelope(tools=[b, a]))["tools"])
+        envelope_hashes(envelope(tools=TOOLS))["tools"]
+        != (envelope_hashes(envelope(tools=changed))["tools"])
     )
+
+
+def test_lists_inside_tool_parameters_keep_declared_order():
+    def tool(required):
+        return envelope(tools=[{"name": "t", "parameters": {"required": required}}])
+
+    assert envelope_hashes(tool(["a", "b"]))["tools"] != envelope_hashes(tool(["b", "a"]))["tools"]
 
 
 def test_duplicate_tool_names_are_rejected():
