@@ -64,6 +64,8 @@ def envelope_hashes(envelope: RequestEnvelope | None) -> dict[str, str] | None:
     if envelope is None:
         return None
     data = strip_credentials(envelope.model_dump(mode="json"))
+    # Names are unique, so name order is unambiguous; lists inside parameters keep their order.
+    data["tools"] = sorted(data["tools"], key=lambda tool: tool["name"])
     return {component: digest(data[component]) for component in ENVELOPE_COMPONENTS}
 
 
